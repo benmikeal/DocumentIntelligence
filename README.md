@@ -1,141 +1,171 @@
-# 🚀 Welcome to Z.ai Code Scaffold
+# 🇰🇪 Kenya Government Document Intelligence System
 
-A modern, production-ready web application scaffold powered by cutting-edge technologies, designed to accelerate your development with [Z.ai](https://chat.z.ai)'s AI-powered coding assistance.
+A modern semantic search application for Kenya government documents, powered by AI embeddings and vector search technology.
 
-## ✨ Technology Stack
+## ✨ Features
 
-This scaffold provides a robust foundation built with:
+- **🔍 Semantic Search** - AI-powered search across 1,374 document chunks from 50+ Kenya government documents
+- **📄 Document Viewing** - Built-in PDF viewer with text extraction
+- **⬇️ PDF Downloads** - Direct download of source government documents
+- **📊 Document Dashboard** - Browse and explore the document corpus
+- **🎯 Smart Suggestions** - Example queries tailored to Kenya government content
+- **⚡ Real-time Search** - Fast vector similarity search with relevance scoring
 
-### 🎯 Core Framework
-- **⚡ Next.js 15** - The React framework for production with App Router
-- **📘 TypeScript 5** - Type-safe JavaScript for better developer experience
-- **🎨 Tailwind CSS 4** - Utility-first CSS framework for rapid UI development
+## 🗄️ Document Corpus
 
-### 🧩 UI Components & Styling
-- **🧩 shadcn/ui** - High-quality, accessible components built on Radix UI
-- **🎯 Lucide React** - Beautiful & consistent icon library
-- **🌈 Framer Motion** - Production-ready motion library for React
-- **🎨 Next Themes** - Perfect dark mode in 2 lines of code
+The system includes pre-processed documents covering:
+- Kenya Mining Handbook and regulations
+- Tax procedures and investment incentives
+- Business registration and licensing
+- Mining development strategies
+- Environmental requirements
+- And 45+ other government documents
 
-### 📋 Forms & Validation
-- **🎣 React Hook Form** - Performant forms with easy validation
-- **✅ Zod** - TypeScript-first schema validation
+**Total:** 1,374 chunks from 50 documents, indexed with 384-dimensional embeddings
 
-### 🔄 State Management & Data Fetching
-- **🐻 Zustand** - Simple, scalable state management
-- **🔄 TanStack Query** - Powerful data synchronization for React
-- **🌐 Axios** - Promise-based HTTP client
+## 🚀 Technology Stack
 
-### 🗄️ Database & Backend
-- **🗄️ Prisma** - Next-generation Node.js and TypeScript ORM
-- **🔐 NextAuth.js** - Complete open-source authentication solution
+### Core Framework
+- **⚡ Next.js 15** - React framework with App Router
+- **📘 TypeScript 5** - Type-safe development
+- **🎨 Tailwind CSS 4** - Modern UI styling
 
-### 🎨 Advanced UI Features
-- **📊 TanStack Table** - Headless UI for building tables and datagrids
-- **🖱️ DND Kit** - Modern drag and drop toolkit for React
-- **📊 Recharts** - Redefined chart library built with React and D3
-- **🖼️ Sharp** - High performance image processing
+### Search & AI
+- **🔮 Vector Embeddings** - all-MiniLM-L6-v2 model (384 dimensions)
+- **🔍 Cosine Similarity** - Semantic search ranking
+- **📚 Pre-computed Corpus** - Fast search without runtime embedding generation
 
-### 🌍 Internationalization & Utilities
-- **🌍 Next Intl** - Internationalization library for Next.js
-- **📅 Date-fns** - Modern JavaScript date utility library
-- **🪝 ReactUse** - Collection of essential React hooks for modern development
+### UI Components
+- **🧩 shadcn/ui** - Accessible components built on Radix UI
+- **🎯 Lucide React** - Beautiful icons
+- **🌈 Framer Motion** - Smooth animations
 
-## 🎯 Why This Scaffold?
-
-- **🏎️ Fast Development** - Pre-configured tooling and best practices
-- **🎨 Beautiful UI** - Complete shadcn/ui component library with advanced interactions
-- **🔒 Type Safety** - Full TypeScript configuration with Zod validation
-- **📱 Responsive** - Mobile-first design principles with smooth animations
-- **🗄️ Database Ready** - Prisma ORM configured for rapid backend development
-- **🔐 Auth Included** - NextAuth.js for secure authentication flows
-- **📊 Data Visualization** - Charts, tables, and drag-and-drop functionality
-- **🌍 i18n Ready** - Multi-language support with Next Intl
-- **🚀 Production Ready** - Optimized build and deployment settings
-- **🤖 AI-Friendly** - Structured codebase perfect for AI assistance
-
-## 🚀 Quick Start
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-```
-
-Open [http://localhost:3000](http://localhost:3000) to see your application running.
-
-## 🤖 Powered by Z.ai
-
-This scaffold is optimized for use with [Z.ai](https://chat.z.ai) - your AI assistant for:
-
-- **💻 Code Generation** - Generate components, pages, and features instantly
-- **🎨 UI Development** - Create beautiful interfaces with AI assistance  
-- **🔧 Bug Fixing** - Identify and resolve issues with intelligent suggestions
-- **📝 Documentation** - Auto-generate comprehensive documentation
-- **🚀 Optimization** - Performance improvements and best practices
-
-Ready to build something amazing? Start chatting with Z.ai at [chat.z.ai](https://chat.z.ai) and experience the future of AI-powered development!
+### Database & Backend
+- **🗄️ Prisma** - Type-safe ORM with SQLite
+- **📁 File System** - Direct PDF serving
+- **🔄 Socket.IO** - Real-time updates
 
 ## 📁 Project Structure
 
 ```
 src/
-├── app/                 # Next.js App Router pages
-├── components/          # Reusable React components
-│   └── ui/             # shadcn/ui components
-├── hooks/              # Custom React hooks
-└── lib/                # Utility functions and configurations
+├── app/
+│   ├── api/
+│   │   ├── search/              # Vector search endpoint
+│   │   ├── documents/           # Document management
+│   │   │   ├── list/           # Browse documents
+│   │   │   ├── view/           # View document text
+│   │   │   └── download/       # Download PDFs
+│   │   └── corpus/             # Corpus statistics
+│   ├── page.tsx                # Main search interface
+│   └── layout.tsx              # App layout
+├── components/
+│   └── ui/                     # shadcn/ui components
+├── lib/
+│   ├── embeddings.ts           # Vector search service
+│   ├── chunking.ts             # Document chunking
+│   ├── db.ts                   # Database client
+│   └── utils.ts                # Utilities
+├── data/
+│   └── kenya_gov_corpus.json   # Pre-computed embeddings
+└── public/
+    └── pdfs/                    # Government PDF files
 ```
 
-## 🎨 Available Features & Components
+## 🚀 Quick Start
 
-This scaffold includes a comprehensive set of modern web development tools:
+### Prerequisites
+- Node.js 18+
+- npm or yarn
 
-### 🧩 UI Components (shadcn/ui)
-- **Layout**: Card, Separator, Aspect Ratio, Resizable Panels
-- **Forms**: Input, Textarea, Select, Checkbox, Radio Group, Switch
-- **Feedback**: Alert, Toast (Sonner), Progress, Skeleton
-- **Navigation**: Breadcrumb, Menubar, Navigation Menu, Pagination
-- **Overlay**: Dialog, Sheet, Popover, Tooltip, Hover Card
-- **Data Display**: Badge, Avatar, Calendar
+### Installation
 
-### 📊 Advanced Data Features
-- **Tables**: Powerful data tables with sorting, filtering, pagination (TanStack Table)
-- **Charts**: Beautiful visualizations with Recharts
-- **Forms**: Type-safe forms with React Hook Form + Zod validation
+```bash
+# Install dependencies
+npm install
 
-### 🎨 Interactive Features
-- **Animations**: Smooth micro-interactions with Framer Motion
-- **Drag & Drop**: Modern drag-and-drop functionality with DND Kit
-- **Theme Switching**: Built-in dark/light mode support
+# Setup database
+npm run db:push
 
-### 🔐 Backend Integration
-- **Authentication**: Ready-to-use auth flows with NextAuth.js
-- **Database**: Type-safe database operations with Prisma
-- **API Client**: HTTP requests with Axios + TanStack Query
-- **State Management**: Simple and scalable with Zustand
+# Start development server
+npm run dev
+```
 
-### 🌍 Production Features
-- **Internationalization**: Multi-language support with Next Intl
-- **Image Optimization**: Automatic image processing with Sharp
-- **Type Safety**: End-to-end TypeScript with Zod validation
-- **Essential Hooks**: 100+ useful React hooks with ReactUse for common patterns
+Open [http://localhost:3000](http://localhost:3000) to see the application.
 
-## 🤝 Get Started with Z.ai
+### Available Scripts
 
-1. **Clone this scaffold** to jumpstart your project
-2. **Visit [chat.z.ai](https://chat.z.ai)** to access your AI coding assistant
-3. **Start building** with intelligent code generation and assistance
-4. **Deploy with confidence** using the production-ready setup
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm start            # Start production server
+npm run db:push      # Push Prisma schema to database
+npm run db:generate  # Generate Prisma client
+```
+
+## 🔍 How It Works
+
+### 1. Document Processing
+Documents are processed offline using Python:
+- PDFs extracted with Chandra OCR (Qwen2.5-VL-7B-Instruct model)
+- Text chunked into 1000-character segments with 200-character overlap
+- Embeddings generated using sentence-transformers (all-MiniLM-L6-v2)
+- Stored in `kenya_gov_corpus.json` with pre-computed vectors
+
+### 2. Search Flow
+1. User enters a search query
+2. Query embedding generated (currently uses mock hash-based embedding)
+3. Cosine similarity calculated against all 1,374 document chunks
+4. Results sorted by relevance score
+5. Top 5 results displayed with document context
+
+### 3. Vector Search
+```typescript
+// Cosine similarity for semantic matching
+const cosineSimilarity = (vec1, vec2) => {
+  const dotProduct = vec1.reduce((sum, val, i) => sum + val * vec2[i], 0)
+  const norm1 = Math.sqrt(vec1.reduce((sum, val) => sum + val * val, 0))
+  const norm2 = Math.sqrt(vec2.reduce((sum, val) => sum + val * val, 0))
+  return dotProduct / (norm1 * norm2)
+}
+```
+
+## 📊 Data Statistics
+
+```json
+{
+  "totalDocuments": 50,
+  "totalChunks": 1374,
+  "embeddingDimension": 384,
+  "embeddingModel": "all-MiniLM-L6-v2",
+  "chunkSize": 1000,
+  "chunkOverlap": 200
+}
+```
+
+## 🔧 Known Issues & Roadmap
+
+### Current Limitations
+- ⚠️ Query embeddings use mock hash-based generation (not real model)
+- ⚠️ Search threshold disabled due to embedding mismatch
+- ⚠️ Limited to pre-indexed documents only
+
+### Planned Improvements
+- [ ] Implement real query embeddings using `@xenova/transformers`
+- [ ] Add document upload and processing pipeline
+- [ ] Implement proper relevance thresholds
+- [ ] Add multi-language support
+- [ ] Enhance document metadata extraction
+- [ ] Add export functionality for search results
+
+## 🤝 Contributing
+
+This is a personal project showcasing semantic search for government documents. Feel free to fork and adapt for your own use cases.
+
+## 📄 License
+
+This project uses publicly available Kenya government documents. The codebase is available for educational and research purposes.
 
 ---
 
-Built with ❤️ for the developer community. Supercharged by [Z.ai](https://chat.z.ai) 🚀
+Built with modern web technologies for efficient government document search 🚀
