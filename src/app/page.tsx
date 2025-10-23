@@ -59,18 +59,18 @@ export default function DocumentIntelligenceSystem() {
   } | null>(null)
 
   const exampleQuestions = [
-    "What minerals are found in Kenya?",
-    "What are the mining tax incentives for investors?",
-    "How do I apply for a mining license in Kenya?",
-    "What is Kenya Vision 2030's mining development strategy?",
-    "What are the investment opportunities in Kenya's mining sector?",
-    "What environmental requirements apply to mining operations?",
-    "What geological formations contain minerals in Kenya?",
-    "What are the capital allowances for mining investments?",
-    "How does Kenya support foreign investment in mining?",
-    "What rare earth elements are found in Kenya?",
-    "What is the licensing process for mineral exploration?",
-    "What infrastructure supports mining operations in Kenya?"
+    "What are the investment incentives in Kenya?",
+    "How do I apply for a work permit in Kenya?",
+    "What are the tax procedures for foreign investors?",
+    "What is the process for registering land in Kenya?",
+    "What are the benefits of Special Economic Zones?",
+    "How do I protect my foreign investment in Kenya?",
+    "What are the employment regulations in Kenya?",
+    "What is Kenya Vision 2030's economic strategy?",
+    "What are the PPP project opportunities in Kenya?",
+    "How do I register a company in Kenya?",
+    "What are the customs and import procedures?",
+    "What are the data protection requirements in Kenya?"
   ]
 
   // Load pre-loaded documents and corpus stats on mount
