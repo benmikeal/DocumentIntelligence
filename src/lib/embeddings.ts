@@ -1,4 +1,3 @@
-import ZAI from 'z-ai-web-dev-sdk'
 import { DocumentChunk } from './chunking'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -17,22 +16,7 @@ export interface SearchResult {
 }
 
 export class EmbeddingService {
-  private zai: any
   private dimension: number = 384
-
-  constructor() {
-    this.initializeZAI()
-  }
-
-  private async initializeZAI() {
-    try {
-      this.zai = await ZAI.create()
-    } catch (error) {
-      console.error('Failed to initialize ZAI:', error)
-      // Don't throw - allow fallback to mock embeddings
-      this.zai = null
-    }
-  }
 
   async generateEmbedding(text: string): Promise<number[]> {
     try {
