@@ -3,8 +3,8 @@ import { createServer } from 'http';
 import next from 'next';
 
 const dev = process.env.NODE_ENV !== 'production';
-const currentPort = 3000;
-const hostname = '127.0.0.1';
+const currentPort = parseInt(process.env.PORT || '3000', 10);
+const hostname = '0.0.0.0';
 
 // Custom server
 async function createCustomServer() {

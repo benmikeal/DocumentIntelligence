@@ -65,4 +65,4 @@ USER nextjs
 EXPOSE 3000
 
 # Start the application
-CMD ["node", "server.ts"]
+CMD ["npx", "tsx", "server.ts"]
