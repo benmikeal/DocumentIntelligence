@@ -1,3 +1,4 @@
+import { pipeline } from '@xenova/transformers'
 import { DocumentChunk } from './chunking'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -16,14 +17,26 @@ export interface SearchResult {
 }
 
 export class EmbeddingService {
+  private static embeddingPipeline: any = null
   private dimension: number = 384
+
+  private async initializeEmbeddings() {
+    if (!EmbeddingService.embeddingPipeline) {
+      console.log('[Embeddings] Loading all-MiniLM-L6-v2 model (first time may take a few minutes)...')
+      EmbeddingService.embeddingPipeline = await pipeline(
+        'feature-extraction',
+        'Xenova/all-MiniLM-L6-v2'
+      )
+      console.log('[Embeddings] Model loaded successfully!')
+    }
+    return EmbeddingService.embeddingPipeline
+  }
 
   async generateEmbedding(text: string): Promise<number[]> {
     try {
-      // For now, we'll use a mock embedding generation
-      // In a real implementation, you would use a proper embedding model
-      const mockEmbedding = await this.generateMockEmbedding(text)
-      return mockEmbedding
+      const extractor = await this.initializeEmbeddings()
+      const output = await extractor(text, { pooling: 'mean', normalize: true })
+      return Array.from(output.data)
     } catch (error) {
       console.error('Embedding generation failed:', error)
       throw error
@@ -52,37 +65,6 @@ export class EmbeddingService {
     return results
   }
 
-  private async generateMockEmbedding(text: string): Promise<number[]> {
-    // Generate a deterministic but pseudo-random embedding based on text
-    // This simulates the behavior of a real embedding model
-    const hash = this.simpleHash(text)
-    const embedding: number[] = []
-    
-    for (let i = 0; i < this.dimension; i++) {
-      // Create a pseudo-random but deterministic value
-      const seed = hash + i
-      const value = (Math.sin(seed) * 10000 - Math.floor(Math.sin(seed) * 10000)) / 10000
-      embedding.push(value)
-    }
-    
-    // Normalize the embedding
-    return this.normalizeVector(embedding)
-  }
-
-  private simpleHash(str: string): number {
-    let hash = 0
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
-      hash = hash & hash // Convert to 32-bit integer
-    }
-    return Math.abs(hash)
-  }
-
-  private normalizeVector(vector: number[]): number[] {
-    const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0))
-    return vector.map(val => val / magnitude)
-  }
 }
 
 export class VectorSearchService {
