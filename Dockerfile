@@ -1,15 +1,15 @@
 # Multi-stage build for optimized production image
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 
 # Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN npm ci --only=production && \
+RUN npm ci --omit=dev && \
     npm cache clean --force
 
 # Build stage
@@ -17,13 +17,16 @@ FROM base AS builder
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 
 # Install all dependencies (including devDependencies for build)
 RUN npm ci
 
 # Copy application source
 COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
 
 # Build Next.js application
 RUN npm run build

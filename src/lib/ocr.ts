@@ -1,5 +1,3 @@
-import ZAI from 'z-ai-web-dev-sdk'
-
 export interface OCRResult {
   text: string
   metadata: {
@@ -10,32 +8,35 @@ export interface OCRResult {
 }
 
 export class OCRService {
-  private zai: any
-
   constructor() {
-    this.initializeZAI()
-  }
-
-  private async initializeZAI() {
-    try {
-      this.zai = await ZAI.create()
-    } catch (error) {
-      console.error('Failed to initialize ZAI:', error)
-      throw error
-    }
+    // No initialization needed
   }
 
   async processPDF(pdfBuffer: Buffer): Promise<OCRResult[]> {
     try {
-      // Convert PDF to images (simplified - in real implementation would use pdf-poppler or similar)
-      const images = await this.convertPDFToImages(pdfBuffer)
-      
+      // Dynamic import for CommonJS module
+      const pdf = require('pdf-parse')
+      const data = await pdf(pdfBuffer)
+
+      // Split into pages (simple approach - assuming uniform page distribution)
+      const totalPages = data.numpages || 1
+      const textPerPage = Math.ceil(data.text.length / totalPages)
       const results: OCRResult[] = []
-      
-      for (let i = 0; i < images.length; i++) {
-        const imageBase64 = images[i]
-        const result = await this.processImage(imageBase64, i + 1)
-        results.push(result)
+
+      for (let i = 0; i < totalPages; i++) {
+        const startIdx = i * textPerPage
+        const endIdx = Math.min((i + 1) * textPerPage, data.text.length)
+        const pageText = data.text.substring(startIdx, endIdx)
+        const sections = this.extractSections(pageText)
+
+        results.push({
+          text: pageText,
+          metadata: {
+            pageNumber: i + 1,
+            confidence: 0.95,
+            sections
+          }
+        })
       }
 
       return results
@@ -45,62 +46,6 @@ export class OCRService {
     }
   }
 
-  private async processImage(imageBase64: string, pageNumber: number): Promise<OCRResult> {
-    try {
-      const prompt = `Extract and structure the text from this document page. 
-      Requirements:
-      1. Preserve the document structure and formatting
-      2. Identify and mark section headers with # ## ### markdown
-      3. Extract tables and format them as markdown tables
-      4. Maintain the reading order and flow
-      5. Return the result as clean, structured markdown
-      
-      Focus on accuracy and completeness of the text extraction.`
-
-      const completion = await this.zai.chat.completions.create({
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert OCR system specializing in document text extraction and structuring.'
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: prompt
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${imageBase64}`
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 4000,
-        temperature: 0.1,
-      })
-
-      const extractedText = completion.choices[0]?.message?.content || ''
-      
-      // Identify sections from the extracted text
-      const sections = this.extractSections(extractedText)
-      
-      return {
-        text: extractedText,
-        metadata: {
-          pageNumber,
-          confidence: 0.95, // Mock confidence score
-          sections
-        }
-      }
-    } catch (error) {
-      console.error(`Failed to process page ${pageNumber}:`, error)
-      throw error
-    }
-  }
 
   private extractSections(text: string): string[] {
     const sections: string[] = []
@@ -117,15 +62,6 @@ export class OCRService {
     return sections
   }
 
-  private async convertPDFToImages(pdfBuffer: Buffer): Promise<string[]> {
-    // Mock implementation - in real scenario would use pdf-poppler or similar
-    // For now, return a single mock image
-    const mockImageBase64 = pdfBuffer.toString('base64').substring(0, 1000)
-    
-    // Simulate multiple pages
-    const pageCount = Math.floor(Math.random() * 5) + 1
-    return Array(pageCount).fill(mockImageBase64)
-  }
 
   async processDocumentWithRetry(pdfBuffer: Buffer, maxRetries: number = 3): Promise<OCRResult[]> {
     let lastError: Error | null = null
