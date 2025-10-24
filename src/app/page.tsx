@@ -208,9 +208,9 @@ export default function DocumentIntelligenceSystem() {
       <div className="container mx-auto p-6 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Document Intelligence System</h1>
+          <h1 className="text-4xl font-bold mb-2">Kenya Government Document Intelligence</h1>
           <p className="text-muted-foreground text-lg">
-            Transform unstructured government documents into a queryable knowledge base
+            Lead Kenya's leap into intelligent governance. Built on state-of-the-art Qwen2.5-VL-7B OCR and all-MiniLM-L6-v2 semantic AI, our system has already transformed 50+ documents into 1,374 instantly-accessible knowledge segments. Senior officials extract precise answers from decades of institutional expertise in under a second through advanced vector search—delivering the competitive edge of AI-first government operations.
           </p>
         </div>
 
