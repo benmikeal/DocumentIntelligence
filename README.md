@@ -114,9 +114,9 @@ Documents are processed offline using Python:
 
 ### 2. Search Flow
 1. User enters a search query
-2. Query embedding generated (currently uses mock hash-based embedding)
+2. Query embedding generated using all-MiniLM-L6-v2 model via @xenova/transformers
 3. Cosine similarity calculated against all 1,374 document chunks
-4. Results sorted by relevance score
+4. Results sorted by relevance score (typically 45-80% for relevant results)
 5. Top 5 results displayed with document context
 
 ### 3. Vector Search
@@ -143,20 +143,19 @@ const cosineSimilarity = (vec1, vec2) => {
 }
 ```
 
-## 🔧 Known Issues & Roadmap
+## 🔧 Roadmap
 
 ### Current Limitations
-- ⚠️ Query embeddings use mock hash-based generation (not real model)
-- ⚠️ Search threshold disabled due to embedding mismatch
-- ⚠️ Limited to pre-indexed documents only
+- Limited to pre-indexed documents only
+- First search query takes longer while model loads (~5-10 seconds)
 
 ### Planned Improvements
-- [ ] Implement real query embeddings using `@xenova/transformers`
 - [ ] Add document upload and processing pipeline
-- [ ] Implement proper relevance thresholds
+- [ ] Implement relevance score thresholds for better filtering
 - [ ] Add multi-language support
 - [ ] Enhance document metadata extraction
 - [ ] Add export functionality for search results
+- [ ] Implement caching for faster subsequent searches
 
 ## 🤝 Contributing
 
