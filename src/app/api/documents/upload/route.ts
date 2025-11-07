@@ -24,6 +24,7 @@ const SUPPORTED_MIME_TYPES = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
   'application/msword': ['.doc'],
   'text/plain': ['.txt'],
+  'text/markdown': ['.md'],
   'application/json': ['.json'],
 };
 
