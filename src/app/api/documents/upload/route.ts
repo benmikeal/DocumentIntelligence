@@ -1,128 +1,184 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
-import { OCRService } from '@/lib/ocr'
-import { DocumentChunker } from '@/lib/chunking'
-import { VectorSearchService } from '@/lib/embeddings'
+/**
+ * Document Upload API - Gemini File Search Integration
+ *
+ * Simplified upload flow:
+ * 1. Receive file upload
+ * 2. Save temporarily
+ * 3. Upload to Gemini File Search
+ * 4. Store metadata in database
+ * 5. Clean up temporary file
+ *
+ * No more manual OCR, chunking, or embedding generation!
+ */
 
-// Global vector search service instance
-const vectorSearch = new VectorSearchService()
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { writeFile, unlink, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { existsSync } from 'fs';
+import { geminiFileSearch } from '@/lib/gemini-file-search';
+
+// Supported file types
+const SUPPORTED_MIME_TYPES = {
+  'application/pdf': ['.pdf'],
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+  'application/msword': ['.doc'],
+  'text/plain': ['.txt'],
+  'application/json': ['.json'],
+};
+
+const SUPPORTED_EXTENSIONS = Object.values(SUPPORTED_MIME_TYPES).flat();
 
 export async function POST(request: NextRequest) {
+  let tempFilePath: string | null = null;
+
   try {
-    const formData = await request.formData()
-    const file = formData.get('file') as File
-    
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'No file provided' },
+        { status: 400 }
+      );
     }
 
-    if (!file.name.endsWith('.pdf')) {
-      return NextResponse.json({ error: 'Only PDF files are allowed' }, { status: 400 })
+    // Validate file extension
+    const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+
+    if (!SUPPORTED_EXTENSIONS.includes(fileExt)) {
+      return NextResponse.json(
+        {
+          error: `Unsupported file type. Supported formats: ${SUPPORTED_EXTENSIONS.join(', ')}`,
+        },
+        { status: 400 }
+      );
     }
 
-    // Save file to uploads directory
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    const uploadsDir = join(process.cwd(), 'uploads')
-    const filePath = join(uploadsDir, file.name)
-    
-    await writeFile(filePath, buffer)
+    console.log(`📄 [Upload] Processing file: ${file.name} (${fileExt})`);
+    console.log(`📦 [Upload] File size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
 
-    // Create document record
+    // Save file temporarily
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    // Ensure uploads directory exists
+    const uploadsDir = join(process.cwd(), 'uploads');
+    if (!existsSync(uploadsDir)) {
+      await mkdir(uploadsDir, { recursive: true });
+    }
+
+    const timestamp = Date.now();
+    const safeFileName = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    tempFilePath = join(uploadsDir, safeFileName);
+
+    await writeFile(tempFilePath, buffer);
+    console.log(`💾 [Upload] Temporary file saved: ${tempFilePath}`);
+
+    // Upload to Gemini File Search
+    console.log(`☁️  [Upload] Uploading to Gemini...`);
+
+    const geminiFile = await geminiFileSearch.uploadFile(
+      tempFilePath,
+      file.name,
+      file.type
+    );
+
+    console.log(`✅ [Upload] Gemini upload successful!`);
+    console.log(`   File ID: ${geminiFile.name}`);
+    console.log(`   State: ${geminiFile.state}`);
+
+    // Create document record in database
     const document = await db.document.create({
       data: {
         filename: file.name,
-        title: file.name.replace('.pdf', ''),
-        totalPages: 0, // Will be updated after processing
+        title: file.name.replace(/\.[^/.]+$/, ''), // Remove extension
+        totalPages: 0, // Gemini doesn't expose page count directly
+        geminiFileId: geminiFile.name.split('/').pop() || geminiFile.name,
+        geminiFileName: geminiFile.name,
+        fileSearchStore: 'default', // Will implement store management later
+        indexedAt: new Date(),
+        processedAt: new Date(),
       },
-    })
+    });
 
-    // Start processing in background
-    processDocumentAsync(document.id, filePath, buffer)
+    console.log(`📝 [Upload] Document record created: ${document.id}`);
 
-    return NextResponse.json(document)
+    // Clean up temporary file
+    if (tempFilePath && existsSync(tempFilePath)) {
+      await unlink(tempFilePath);
+      console.log(`🗑️  [Upload] Temporary file deleted`);
+    }
+
+    // Return success response
+    return NextResponse.json({
+      success: true,
+      document: {
+        id: document.id,
+        filename: document.filename,
+        title: document.title,
+        geminiFileId: document.geminiFileId,
+        indexedAt: document.indexedAt,
+      },
+      message: 'Document uploaded and indexed successfully!',
+    });
+
   } catch (error) {
-    console.error('Upload error:', error)
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
+    console.error('❌ [Upload] Upload error:', error);
+
+    // Clean up temporary file on error
+    if (tempFilePath && existsSync(tempFilePath)) {
+      try {
+        await unlink(tempFilePath);
+        console.log(`🗑️  [Upload] Temporary file cleaned up after error`);
+      } catch (cleanupError) {
+        console.error('Failed to clean up temporary file:', cleanupError);
+      }
+    }
+
+    // Return error response
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: `Upload failed: ${error.message}` },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: 'Upload failed due to an unknown error' },
+      { status: 500 }
+    );
   }
 }
 
-async function processDocumentAsync(documentId: string, filePath: string, pdfBuffer: Buffer) {
+/**
+ * GET endpoint to list all uploaded documents
+ */
+export async function GET() {
   try {
-    console.log(`Starting processing for document ${documentId}`)
-    
-    // Initialize services
-    const ocrService = new OCRService()
-    const chunker = new DocumentChunker()
-    
-    // Step 1: OCR Processing
-    console.log('Step 1: OCR Processing...')
-    const ocrResults = await ocrService.processDocumentWithRetry(pdfBuffer)
-    console.log(`OCR completed: ${ocrResults.length} pages processed`)
-    
-    // Update page count
-    await db.document.update({
-      where: { id: documentId },
-      data: { totalPages: ocrResults.length }
-    })
-    
-    // Step 2: Document Chunking
-    console.log('Step 2: Document Chunking...')
-    const chunks = await chunker.chunkDocument(ocrResults, documentId)
-    console.log(`Chunking completed: ${chunks.length} chunks created`)
-    
-    // Step 3: Store chunks in database
-    console.log('Step 3: Storing chunks...')
-    for (const chunk of chunks) {
-      await db.chunk.create({
-        data: {
-          id: chunk.id,
-          documentId,
-          content: chunk.content,
-          sectionName: chunk.sectionName,
-          pageNumber: chunk.pageNumber,
-          chunkIndex: chunk.chunkIndex,
-          metadata: chunk.metadata,
-        },
-      })
-    }
-    
-    // Step 4: Generate embeddings and index for search
-    console.log('Step 4: Generating embeddings...')
-    await vectorSearch.indexChunks(chunks)
-    
-    // Store embeddings in database
-    for (const chunk of chunks) {
-      const embedding = await vectorSearch['embeddingService'].generateEmbedding(chunk.content)
-      await db.embedding.create({
-        data: {
-          chunkId: chunk.id,
-          vector: JSON.stringify(embedding),
-          dimension: embedding.length,
-        },
-      })
-    }
-    
-    // Mark document as processed
-    await db.document.update({
-      where: { id: documentId },
-      data: { processedAt: new Date() }
-    })
-    
-    console.log(`Document ${documentId} processing completed successfully`)
-    
+    const documents = await db.document.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        filename: true,
+        title: true,
+        totalPages: true,
+        geminiFileId: true,
+        indexedAt: true,
+        createdAt: true,
+      },
+    });
+
+    return NextResponse.json({
+      documents,
+      total: documents.length,
+    });
   } catch (error) {
-    console.error(`Document processing failed for ${documentId}:`, error)
-    
-    // Mark document as failed (you could add a status field to the schema)
-    await db.document.update({
-      where: { id: documentId },
-      data: { processedAt: new Date() } // Still update to indicate processing attempt
-    })
+    console.error('❌ [Upload] Failed to list documents:', error);
+
+    return NextResponse.json(
+      { error: 'Failed to list documents' },
+      { status: 500 }
+    );
   }
 }
-
-// Export the vector search service for use in search API
-export { vectorSearch }

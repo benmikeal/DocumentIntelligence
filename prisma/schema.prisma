@@ -14,16 +14,22 @@ datasource db {
 }
 
 model Document {
-  id          String   @id @default(cuid())
-  filename    String
-  title       String?
-  totalPages   Int
-  processedAt DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  id               String   @id @default(cuid())
+  filename         String
+  title            String?
+  totalPages       Int
+  processedAt      DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Gemini File Search integration
+  geminiFileId     String?  // Gemini Files API file ID
+  geminiFileName   String?  // Gemini file resource name (e.g., "files/abc123")
+  fileSearchStore  String?  // File search store name
+  indexedAt        DateTime? // When file was indexed in Gemini
+
   chunks      Chunk[]
-  
+
   @@map("documents")
 }
 
