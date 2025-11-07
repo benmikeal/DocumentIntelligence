@@ -7,18 +7,31 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Validate API key presence
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+// Get API key (lazy evaluation for build-time compatibility)
+function getAPIKey(): string {
+  const apiKey = process.env.GEMINI_API_KEY;
 
-if (!GEMINI_API_KEY) {
-  throw new Error(
-    'GEMINI_API_KEY is not set. Please add it to your .env.local file.\n' +
-    'Get your API key from: https://ai.google.dev'
-  );
+  if (!apiKey) {
+    throw new Error(
+      'GEMINI_API_KEY is not set. Please add it to your .env.local file.\n' +
+      'Get your API key from: https://ai.google.dev'
+    );
+  }
+
+  return apiKey;
 }
 
-// Initialize Gemini client
-export const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+// Lazy initialization of Gemini client
+let _genAI: GoogleGenerativeAI | null = null;
+
+export const genAI = new Proxy({} as GoogleGenerativeAI, {
+  get(target, prop) {
+    if (!_genAI) {
+      _genAI = new GoogleGenerativeAI(getAPIKey());
+    }
+    return (_genAI as any)[prop];
+  }
+});
 
 /**
  * Get a generative model instance
@@ -126,12 +139,21 @@ export async function testConnection(): Promise<boolean> {
   }
 }
 
-// Validate API key on module load
-if (!validateAPIKey(GEMINI_API_KEY)) {
-  console.warn(
-    '[Gemini] ⚠️  API key format appears invalid. ' +
-    'Expected format: AIza followed by 35 alphanumeric characters.'
-  );
+// Validate API key format when it's actually used
+export function ensureAPIKey(): void {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (apiKey && !validateAPIKey(apiKey)) {
+    console.warn(
+      '[Gemini] ⚠️  API key format appears invalid. ' +
+      'Expected format: AIza followed by 35 alphanumeric characters.'
+    );
+  }
 }
 
-console.log('[Gemini] 🚀 Client initialized successfully');
+// Only log initialization in development/runtime, not during build
+if (typeof window !== 'undefined' || process.env.NODE_ENV !== 'production') {
+  if (process.env.GEMINI_API_KEY) {
+    console.log('[Gemini] 🚀 Client initialized successfully');
+  }
+}
