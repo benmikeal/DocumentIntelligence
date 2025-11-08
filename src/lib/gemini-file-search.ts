@@ -206,16 +206,17 @@ export class GeminiFileSearchService {
       const response = result.response;
       const text = response.text();
 
-      // Extract grounding metadata (citations)
+      // Extract grounding metadata (citations) - matches Google's File Search pattern
       const groundingMetadata = (response as any).groundingMetadata;
       const citations: Citation[] = [];
 
       if (groundingMetadata && groundingMetadata.groundingChunks) {
         for (const chunk of groundingMetadata.groundingChunks) {
-          if (chunk.web) {
+          // File Search uses retrievedContext, not web
+          if (chunk.retrievedContext) {
             citations.push({
-              sourceDocument: chunk.web.title || 'Web Source',
-              excerpt: chunk.web.snippet,
+              sourceDocument: chunk.retrievedContext.title || 'Document',
+              excerpt: chunk.retrievedContext.text || '',
             });
           }
         }
