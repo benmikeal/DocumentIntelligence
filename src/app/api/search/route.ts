@@ -26,47 +26,19 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔍 [Search] Query: "${query}"`);
 
-    // Get all uploaded Gemini file names
-    const documents = await db.document.findMany({
-      where: {
-        geminiFileName: { not: null },
-      },
-      select: {
-        id: true,
-        geminiFileName: true,
-        filename: true,
-        title: true,
-      },
-    });
+    // Search ALL files in Gemini File Search (no database needed!)
+    // Gemini File Search will search across all uploaded files automatically
+    console.log(`📚 [Search] Searching across all Gemini files`);
 
-    if (documents.length === 0) {
-      console.log('⚠️  [Search] No documents indexed in Gemini');
-      return NextResponse.json({
-        results: [],
-        message: 'No documents have been uploaded yet. Please upload documents first.',
-      });
-    }
-
-    console.log(`📚 [Search] Searching across ${documents.length} documents`);
-
-    // Extract file names for search
-    const fileNames = documents
-      .map((doc) => doc.geminiFileName)
-      .filter((name): name is string => name !== null);
-
-    // Perform Gemini File Search
-    const geminiResults = await geminiFileSearch.search(query, fileNames, 5);
+    // Perform Gemini File Search without specifying files = search all files
+    const geminiResults = await geminiFileSearch.search(query, undefined, 5);
 
     console.log(`✅ [Search] Found ${geminiResults.length} results`);
 
     // Format results for frontend
     const formattedResults = geminiResults.map((result, index) => {
-      // Try to match result to document (if citations provide this info)
-      // For now, we'll use the first citation's source document if available
-      const sourceDoc = result.citations[0]?.sourceDocument;
-      const matchedDoc = documents.find(
-        (doc) => doc.filename === sourceDoc || doc.title === sourceDoc
-      );
+      // Use citation source document as the title
+      const sourceDoc = result.citations[0]?.sourceDocument || 'Kenya Government Documents';
 
       return {
         id: `result-${index}`,
@@ -77,9 +49,8 @@ export async function POST(request: NextRequest) {
           pageNumber: citation.pageNumber,
           excerpt: citation.excerpt,
         })),
-        documentTitle: matchedDoc?.title || sourceDoc || 'Multiple Sources',
-        documentId: matchedDoc?.id,
-        sectionName: 'AI-Generated Answer',
+        documentTitle: sourceDoc,
+        sectionName: 'AI-Generated Answer with Citations',
       };
     });
 
